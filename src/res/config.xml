@@ -2,7 +2,7 @@
 title="增量更新工具@cyj"
 appName="增量更新工具"
 
-version="1.0.2"
+version="1.0.6"
 
 ftphost="192.168.2.55"
 ftpname="dev"
@@ -13,13 +13,13 @@ svnpath="$apppath/res/bin/svnbin/svn.exe"
 svnoutpath="D:/svnOut/"
 
 rarpath="$apppath/res/bin/rarbin/winrar.exe"
+webppath="$apppath/res/bin/webpbin/cwebp.exe"
 
 upip="192.168.2.51"
 upname="root"
 uppass="1234"
 
-mapkey="3tion"
-mapextion="mpq"
+
 
 logpath="$apppath/res/log/log.txt"
 logmaxshownum="14"

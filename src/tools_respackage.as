@@ -8,7 +8,7 @@ package
 	import flash.display.StageScaleMode;
 	import flash.events.Event;
 	
-	[SWF(width="650", height="600", backgroundColor="#444444", frameRate="30")]
+	[SWF(width="650", height="620", backgroundColor="#444444", frameRate="30")]
 	public class tools_respackage extends Sprite
 	{
 		public function tools_respackage()
@@ -25,9 +25,6 @@ package
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			App.init(this);
 			ToolsApp.start();
-			
-//			trace(MD5.hash("8001/000000.jpg"+"3tion").substr(0,10));
-//			trace(MD5.hash("res/m/8001/000000.jpg").substr(0,10));
 		}
 	}
 }

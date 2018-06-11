@@ -15,6 +15,8 @@ package com.cyj.app.data
 		public var time50Export:Number=0.01;
 		public var time50Zip:Number=0.01;
 		public var time50Up:Number=0.01;
+		public var time50Webp:Number=0.1;
+		public var timeWebp:Number = 0.1;
 		
 		
 		

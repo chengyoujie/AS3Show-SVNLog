@@ -14,12 +14,15 @@ package com.cyj.app.view
 	import com.cyj.utils.md5.MD5;
 	
 	import flash.events.Event;
+	import flash.events.FocusEvent;
 	import flash.filesystem.File;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.flash_proxy;
 	import flash.utils.getTimer;
+	import flash.utils.setTimeout;
 	
+	import morn.core.components.TextInput;
 	import morn.core.handlers.Handler;
 	import morn.core.managers.TipManager;
 	
@@ -34,13 +37,16 @@ package com.cyj.app.view
 		public static const EVENT_END_RAR_COMPLETE:String = "EVENT_END_RAR_COMPLETE";
 		public static const EVENT_END_UP_COMPLETE:String = "EVENT_END_UP_COMPLETE";
 		public static const EVENT_END_DEL_COMPLETE:String = "EVENT_END_DEL_COMPLETE";
+		public static const EVENT_END_WEBP_COMPLETE:String = "EVENT_END_WEBP_COMPLETE";
 		
 		private var _curProject:ProjectConfig;
 		private var _curProjectResDic:Object;
 		
 		private var _deleteNum:int = 0;
 		private var _totalNum:int = 0;
+		private var _totalSize:Number = 0;
 		private var _testExportTime:int = 0;
+		private var _testWebpTime:int = 0;
 		private var _testZipTime:int = 0;
 		private var _zipPackName:String = "test.zip";
 		private var _testUpTime:int= 0;
@@ -83,19 +89,91 @@ package com.cyj.app.view
 			btnCreate.clickHandler = new Handler(handleGetSvnInfo);
 			btnOutPut.clickHandler = new Handler(doExport);
 			btnViewLog.clickHandler = new Handler(handleOpenLog);
-			btnOutWeb.clickHandler = new Handler(handleOutWeb);
+			btnOpenDir.clickHandler = new Handler(handleOutWeb);
 			btnTimeNow.clickHandler = new Handler(handleTimeNow);
 			comPorject.selectHandler = new Handler(handleSelectProject);
 			checkDele.clickHandler = new Handler(handleCheckDeleClick);
+			btnGoDay.clickHandler = new Handler(handleGoDay);
+			btnTimeLast.clickHandler = new Handler(handleTimeLast);
+			btnOpenWeb.clickHandler =new Handler(handleOpenWeb);
 //			btn
+			
+			inputStartDay.addEventListener(FocusEvent.FOCUS_OUT, handleFouseOut);
+			inputStartTime.addEventListener(FocusEvent.FOCUS_OUT, handleFouseOut);
+			inputEndDay.addEventListener(FocusEvent.FOCUS_OUT, handleFouseOut);
+			inputEndTime.addEventListener(FocusEvent.FOCUS_OUT, handleFouseOut);
+			
+			//input
 			ToolsApp.event.addEventListener(EVENT_END_SVN_LOG, outFileList);
 			ToolsApp.event.addEventListener(EVENT_END_SVN_EXPORT, outExportSuccess);
 			ToolsApp.event.addEventListener(EVENT_END_RAR_COMPLETE, outRarSuccess);
 			ToolsApp.event.addEventListener(EVENT_END_UP_COMPLETE, outUpSuccess);
 			ToolsApp.event.addEventListener(EVENT_END_DEL_COMPLETE, outDelSuccess);
+			ToolsApp.event.addEventListener(EVENT_END_WEBP_COMPLETE, outWebpSuccess);
 			//init
 			
 		} 
+		
+		private function handleFouseOut(e:Event):void
+		{
+			var input:TextInput = e.currentTarget as TextInput;
+			var infos:Array;
+			if(input == inputStartDay || input == inputStartTime)
+			{
+				infos = getTimeInfo(input.text, true);
+				if(infos.length>0)
+				{
+					infos.sortOn("id", Array.NUMERIC|Array.DESCENDING);
+					setInputTimeByTimeInfo(infos[0], inputStartDay, inputStartTime);
+				}
+			}else if(input == inputEndDay || input == inputEndTime)
+			{
+				infos = getTimeInfo(input.text, true);
+				if(infos.length>0)
+				{  
+					infos.sortOn("id", Array.NUMERIC|Array.DESCENDING);
+					setInputTimeByTimeInfo(infos[0], inputEndDay, inputEndTime);
+				}
+			}
+		}
+		
+		private function handleTimeLast():void
+		{
+			var file:File =  new File(_curProject.updir);
+			var list:Array = file.getDirectoryListing();
+			var f:File;
+			var nameList:Array = [];
+			for(var i:int=0; i<list.length; i++)
+			{
+				f = list[i];
+				if(f.extension == "zip")
+				{
+//					var names:Array = f.name.replace(/res_/gi, "").replace(/\.zip/gi, "").split("-");
+//					var nameinfos:Array;
+//					for(var m:int=0; m<names.length; m++)
+//					{
+//						nameinfos = names[m].split("_");
+//						nameList.push({"day":nameinfos[0], "time":nameinfos[1], "timeid":ToolsApp.getTimeId(nameinfos[0], nameinfos[1])});
+//					}
+					nameList = nameList.concat(getTimeInfo(f.name));
+				}
+			}
+			nameList.sortOn("id", Array.NUMERIC|Array.DESCENDING);
+			if(nameList.length>0)
+				setInputTimeByTimeInfo(nameList[0],inputStartDay, inputStartTime);
+//			inputStartDay.text = nameList[0].day.substr(0, 4)+"-"+nameList[0].day.substr(4, 2)+"-"+nameList[0].day.substr(6, 2);
+//			inputStartTime.text = nameList[0].time.substr(0, 2)+":"+nameList[0].time.substr(2, 2)+":"+nameList[0].time.substr(4, 2);
+		}
+		
+		
+		private function handleGoDay():void
+		{
+			var day:int = int(inputGoDay.text);
+			var date:Date = new Date();
+			date.time = date.time-day*60*60*24*1000;
+			setInputTimeByDate(date, inputStartDay, inputStartTime);
+		}
+		
 		
 		/** 选择是否删除临时文件 **/
 		private function handleCheckDeleClick():void
@@ -120,30 +198,11 @@ package com.cyj.app.view
 				return;
 			}
 			_curProject = ToolsApp.projects[index];
-			var file:File =  new File(_curProject.updir);
-			var list:Array = file.getDirectoryListing();
-			var f:File;
-			var nameList:Array = [];
-			for(var i:int=0; i<list.length; i++)
-			{
-				f = list[i];
-				if(f.extension == "zip")
-				{
-					var names:Array = f.name.replace(/res_/gi, "").replace(/\.zip/gi, "").split("-");
-					var nameinfos:Array;
-					for(var m:int=0; m<names.length; m++)
-					{
-						nameinfos = names[m].split("_");
-						nameList.push({"day":nameinfos[0], "time":nameinfos[1], "timeid":ToolsApp.getTimeId(nameinfos[0], nameinfos[1])});
-					}
-				}
-			}
-			nameList.sortOn("timeid", Array.NUMERIC|Array.DESCENDING);
-			inputStartDay.text = nameList[0].day.substr(0, 4)+"-"+nameList[0].day.substr(4, 2)+"-"+nameList[0].day.substr(6, 2);
-			inputStartTime.text = nameList[0].time.substr(0, 2)+":"+nameList[0].time.substr(2, 2)+":"+nameList[0].time.substr(4, 2);
+			handleTimeLast();
 			handleTimeNow();
 			ToolsApp.localCfg.lastProject = index;
 			_curProjectResDic = null;
+			appName.text = ToolsApp.config.appName+" - "+"<font color='#00ff00'>"+_curProject.name+"</font>";
 //			ToolsApp.loader.loadSingleRes("file://"+_curProject.resdicpath.replace(/\\/gi, "/"), ResLoader.BYT, handleResDataLoaded, null, ToolsApp.handleLoadError);
 			ToolsApp.loader.loadSingleRes(convertFilePath(_curProject.resdicpath), ResLoader.BYT, handleResDataLoaded, null, ToolsApp.handleLoadError);
 			
@@ -157,6 +216,67 @@ package com.cyj.app.view
 			
 		}
 		
+		
+		
+		
+		
+//		private function handleAllRes():void
+//		{
+//			if(_curProject == null)return;
+//			var file:File = new File(_curProject.res50path);
+//			_zipPackName = "res_"+inputEndDay.text.replace(/-/gi, "")+"_"+inputEndTime.text.replace(/:/gi, "")+".zip";
+//			_totalNum = 0;
+//			waitTime = 1;
+//			_isRuning = true;
+//			errorMsg = "";
+//			changeFilesLog = "";
+//			_testExportTime = getTimer();
+//			searchChildPath(file, file);
+//		}
+		
+		private var waitTime:int = 0;
+		private var waitEndTime:int = 0;
+//		private function searchChildPath(file:File, rootFile:File):void
+//		{
+//			if(file.isDirectory)
+//			{
+//				if(file.name == ".svn")return ;
+//				var f:File;
+//				var arr:Array = file.getDirectoryListing();
+//				for(var i:int=0; i<arr.length; i++)
+//				{
+//					f = arr[i];
+////					searchChildPath(f, rootFile);
+//					setTimeout(searchChildPath, waitTime, f, rootFile);
+//					waitEndTime = getTimer()+waitTime;
+//					waitTime += 1000;
+//				}
+//			}else{
+//				_totalNum++;
+//				doSaveFile(file, rootFile);
+//			}
+//		}
+		private function handleOpenWeb():void
+		{
+			if(_curProject)
+			{
+				CMDManager.runStringCmd("explorer "+_curProject.weburl);
+			}else{
+				Alert.show("请先选择一个项目");
+			}
+		}
+		private function get isWait():Boolean
+		{
+			return waitTime!=0;
+		}
+		
+//		private function doSaveFile(file:File, rootFile:File):void
+//		{
+//			var outPath:String = file.url.replace(rootFile.url, "");
+//			outPath = getOutPath(outPath);
+//			ToolsApp.loader.loadSingleRes(file.url, ResLoader.BYT, handleSaveToFile, null, hanldeSaveError, {"path":outPath});
+//		}
+//		
 		private function convertFilePath(path:String):String
 		{
 			if(path.indexOf("file://")==0)
@@ -205,8 +325,53 @@ package com.cyj.app.view
 		private function handleTimeNow():void
 		{
 			var date:Date = new Date();
-			inputEndDay.text = ToolsApp.getLenStr(date.fullYear+"", 4, "0", "")+"-"+ToolsApp.getLenStr((date.month+1)+"", 2)+"-"+ToolsApp.getLenStr(date.date+"", 2);
-			inputEndTime.text = ToolsApp.getLenStr(date.hours+"", 2)+":"+ToolsApp.getLenStr(date.minutes+"", 2)+":"+ToolsApp.getLenStr(date.seconds+"", 2);
+//			inputEndDay.text = ToolsApp.getLenStr(date.fullYear+"", 4, "0", "")+"-"+ToolsApp.getLenStr((date.month+1)+"", 2)+"-"+ToolsApp.getLenStr(date.date+"", 2);
+//			inputEndTime.text = ToolsApp.getLenStr(date.hours+"", 2)+":"+ToolsApp.getLenStr(date.minutes+"", 2)+":"+ToolsApp.getLenStr(date.seconds+"", 2);
+			setInputTimeByDate(date, inputEndDay, inputEndTime);
+		}
+		
+		private function setInputTimeByDate(date:Date, inputDay:TextInput, inputTime:TextInput):void
+		{
+			
+			inputDay.text = ToolsApp.getLenStr(date.fullYear+"", 4, "0", "")+"-"+ToolsApp.getLenStr((date.month+1)+"", 2)+"-"+ToolsApp.getLenStr(date.date+"", 2);
+			inputTime.text = ToolsApp.getLenStr(date.hours+"", 2)+":"+ToolsApp.getLenStr(date.minutes+"", 2)+":"+ToolsApp.getLenStr(date.seconds+"", 2);
+		}
+		
+		private function getTimeInfo(time:String, showAlert:Boolean=false):Array
+		{
+			var preTime:String = time.replace(/res_/gi, "").replace(/\.zip/gi, "");
+			
+			var nameList:Array=[]
+			
+			var reg:RegExp = /\d{8}_\d{6}/gi;
+			var names:Array = (preTime).match(reg); 
+			if(names==null)
+			{
+				if(showAlert)
+					Alert.show("请检查日期格式是否正确"+time);
+				return nameList;
+			}
+//			var names:Array = preTime.split("-");
+			
+			var nameinfos:Array;
+			var timeInfo:TimeInfo;
+			for(var m:int=0; m<names.length; m++)
+			{
+				timeInfo = new TimeInfo();
+				nameinfos = names[m].split("_");
+				timeInfo.day = nameinfos[0];
+				timeInfo.time = nameinfos[1];
+				timeInfo.id= ToolsApp.getTimeId(nameinfos[0], nameinfos[1]);
+				nameinfos = names[m].split("_");
+				nameList.push(timeInfo);
+			}
+			return nameList;
+		}
+		
+		private function setInputTimeByTimeInfo(timeInfo:TimeInfo, inputDay:TextInput, inputTime:TextInput):void
+		{
+			inputDay.text = timeInfo.day.substr(0, 4)+"-"+timeInfo.day.substr(4, 2)+"-"+timeInfo.day.substr(6, 2);
+			inputTime.text = timeInfo.time.substr(0, 2)+":"+timeInfo.time.substr(2, 2)+":"+timeInfo.time.substr(4, 2);
 		}
 		
 		
@@ -226,7 +391,12 @@ package com.cyj.app.view
 		/** 打版web **/
 		private function handleOutWeb():void
 		{
-			Alert.show("功能暂未开放");
+			if(_curProject==null)
+			{
+				Alert.show("请先选择项目");
+				return;
+			}
+			ToolsApp.file.openDir(_curProject.updir);
 		}
 		
 		/** 开始获取日志信息 **/
@@ -271,7 +441,7 @@ package com.cyj.app.view
 			var endTimeArr:Array = inputEndDay.text.split("-");
 			var endTime:Date = new Date(endTimeArr[0], int(endTimeArr[1])-1, endTimeArr[2]);
 			endTime.time += 24*60*60*1000;
-			var cmd:String = _curProject.svncmd.replace(/\$starttime/gi, inputStartDay.text).replace(/\$endtime/gi, endTime.fullYear+"-"+(endTime.month+1)+"-"+endTime.date); 
+			var cmd:String = _curProject.svncmd.replace(/==starttime==/gi, inputStartDay.text).replace(/==endtime==/gi, endTime.fullYear+"-"+(endTime.month+1)+"-"+endTime.date); 
 			ToolsApp.svnOper(cmd, EVENT_END_SVN_LOG);
 		}
 		
@@ -348,12 +518,12 @@ package com.cyj.app.view
 				Alert.show("请选择项目");
 				return;
 			}
-			Log.log("压缩结束 准备上传...");
 			_testZipTime = getTimer() - _testZipTime;
 			_testUpTime = getTimer();
 			ToolsApp.cmdClear();
 			ToolsApp.cmdOper("net use \\\\"+ToolsApp.config.upip+" "+ToolsApp.config.uppass+" /user:\""+ToolsApp.config.upname+"\"");
 			ToolsApp.cmdOper("copy /y "+ cmdFilePath(ToolsApp.config.svnoutpath+"/"+_zipPackName)  +" "+_curProject.updir+" ", EVENT_END_UP_COMPLETE);
+			Log.log("压缩结束 正在上传...");
 			
 		}
 		
@@ -371,6 +541,7 @@ package com.cyj.app.view
 			_testUpTime = getTimer() - _testUpTime;
 			
 			Log.log("用時 导出:"+_testExportTime+" 平均:"+_testExportTime/_totalNum + "  总个数:"+_totalNum);
+			Log.log("用時 转换Webp:"+_testWebpTime+" 平均:"+_testWebpTime/_totalWebpNum + "  总个数:"+_totalWebpNum);
 			Log.log("用時 压缩:"+_testZipTime+" 平均:"+_testZipTime/_totalNum + "  总个数:"+_totalNum);
 			Log.log("用時 上传:"+_testUpTime+" 平均:"+_testUpTime/_totalNum + "  总个数:"+_totalNum);
 			if(errorMsg)
@@ -388,10 +559,12 @@ package com.cyj.app.view
 					ToolsApp.localCfg.time50Export = _testExportTime/_totalNum/1000;
 					ToolsApp.localCfg.time50Up = _testUpTime/_totalNum/1000;
 					ToolsApp.localCfg.time50Zip = _testZipTime/_totalNum/1000;
+					ToolsApp.localCfg.time50Webp = _testWebpTime/_totalWebpNum/1000;
 				}else{
 					ToolsApp.localCfg.timeExport = _testExportTime/_totalNum/1000;
 					ToolsApp.localCfg.timeUp = _testUpTime/_totalNum/1000;
 					ToolsApp.localCfg.timeZip = _testZipTime/_totalNum/1000;
+					ToolsApp.localCfg.timeWebp = _testWebpTime/_totalWebpNum/1000;
 				}
 			}
 			
@@ -490,10 +663,12 @@ package com.cyj.app.view
 				Alert.show("或许"+_curProject.resdicpath+"没有加载完。。。。，也或许加载错误了\n请确认路径");
 				return;
 			}
+			waitTime = 0;
 			_isRuning = true;
 			errorMsg = "";
 			changeFilesLog = "";
 			_testExportTime = getTimer();
+			_totalWebpNum = 0;
 			var item:SvnLogInfo;
 			var svnoper:String = "";
 			var path:String;
@@ -513,20 +688,7 @@ package com.cyj.app.view
 					path = res50path;
 					
 					changeFilesLog += item.logs[m].oper+" "+res50path+"\n";
-					if(path.indexOf("m/") != -1)
-					{
-						path = path.replace(/m\//gi, "m2/");
-						if(path.substr(-3) == "jpg")
-						{
-							path = "m2/"+MD5.hash(path.replace("m2/", "")+ToolsApp.config.mapkey).substr(0, 10)+"."+ToolsApp.config.mapextion;
-						}else if(path.indexOf("m2/lib/")!=-1)
-						{
-							
-						}else{
-							path = null;
-							continue;
-						}
-					}
+					path = getOutPath(path);
 					if(item.logs[m].oper.indexOf(SvnLogItem.OPER_DEL)!=-1)
 					{
 						if(logDic[item.logs[m].file])
@@ -547,6 +709,8 @@ package com.cyj.app.view
 			var outFile:File = new File(ToolsApp.config.svnoutpath);
 			_totalNum = 0;
 			_deleteNum = 0;
+			_totalSize = 0;
+			_dealWebpNum = 0;
 			for(var logpath:String in logDic)
 			{
 				logitem = logDic[logpath].data;
@@ -609,6 +773,37 @@ package com.cyj.app.view
 			
 		}
 		
+		private var _totalWebpNum:int = 0;
+		private var _dealWebpNum:int = 0;
+		private function getOutPath(path:String):String
+		{
+			if(_curProject==null)return path;
+			if(path.indexOf("m/") != -1)
+			{
+				if(_curProject.encryptMap == ProjectConfig.ENCRYPT_MD5)//页游的打包方式
+				{
+					path = path.replace(/m\//gi, "m2/");
+					if(path.substr(-3) == "jpg")
+					{
+						path = "m2/"+MD5.hash(path.replace("m2/", "")+_curProject.mapkey).substr(0, 10)+"."+_curProject.mapextion;
+					}
+				}else if(_curProject.encryptMap == ProjectConfig.ENCRYPT_WEBP){//H5的打包方式
+					path = path.replace(/m\//gi, "m2/");
+					var reg:RegExp = /[\/\\](\d*)\.jpg/gi;
+					var arr:Array = reg.exec(path);
+					if(arr && arr.length>1)
+					{
+						var id1:int = arr[1].substr(0, 3);
+						var id2:int = arr[1].substr(3, 3);
+						path = path.replace(arr[1], id1+"_"+id2);
+						_totalWebpNum++;
+					}
+				}
+			}
+			return path;
+		}
+		
+		
 		/**从50上文件保存成功**/
 		private function handleSaveToFile(res:ResData):void
 		{
@@ -618,6 +813,7 @@ package com.cyj.app.view
 			{
 				_curProjectResDic[path] = md5Stream.complete(byte).substr(0, 8);
 			}
+			_totalSize += byte.length;
 			ToolsApp.file.saveByteFile(ToolsApp.config.svnoutpath+"/"+path, byte);
 			expleteComplete();
 			Log.log("保存资源:"+path+" key:"+(_curProjectResDic==null?"NULL":_curProjectResDic[path])+"  "+_deleteNum+"/"+_totalNum);
@@ -635,10 +831,26 @@ package com.cyj.app.view
 		/**检测是否已经导出完毕**/
 		private function checkComplete():void
 		{
-			if(_deleteNum>=_totalNum)
+			if(_deleteNum>=_totalNum && isWait == false)
 			{
-				outExportSuccess();
+				if(_curProject.encryptMap == ProjectConfig.ENCRYPT_WEBP)
+				{
+					Log.log("开始生成webp  文件");
+					_testWebpTime = getTimer();
+					//for /r D:\svnOut\m2 %a in (*.jpg) do if /i "%~xa"==".jpg" D:/common/cwebp.exe %~a -o %~a.webp
+					var dir:String = ToolsApp.config.svnoutpath.replace(/\//gi, "\\")+"m2";
+					ToolsApp.cmdOper('for /r '+dir+' %a in (*.jpg) do if /i "%~xa"==".jpg" '+ToolsApp.config.webppath+' %~a -o %~a.webp',EVENT_END_WEBP_COMPLETE); 
+				}else{
+					outExportSuccess();
+				}
+				
 			}
+		}
+		
+		private function outWebpSuccess(e:Event):void
+		{
+			_testWebpTime = getTimer() - _testWebpTime;
+			outExportSuccess();
 		}
 		
 		
@@ -647,6 +859,14 @@ package com.cyj.app.view
 		public function expleteComplete():void
 		{
 			_deleteNum ++;
+			refushProgess();
+		}
+		
+		
+		public function expleteOneWebP(path:String):void
+		{
+			_dealWebpNum ++;
+			Log.log("保存资源:"+path+"  "+_dealWebpNum+"/"+_totalWebpNum);
 			refushProgess();
 		}
 		
@@ -660,12 +880,36 @@ package com.cyj.app.view
 			progExpFile.label = "处理"+_deleteNum+"/"+_totalNum;
 			if(checkUse50.selected==false)
 			{
-				txtUpLeftTime.text = ""+getTimeStr(_totalNum*ToolsApp.localCfg.timeZip+(_totalNum-_deleteNum)*ToolsApp.localCfg.timeExport+_totalNum*ToolsApp.localCfg.timeUp);
+				if(_curProject && _curProject.encryptMap == ProjectConfig.ENCRYPT_WEBP)
+				{
+					txtUpLeftTime.text = ""+getTimeStr(_totalNum*ToolsApp.localCfg.timeZip+(_totalNum-_deleteNum)*ToolsApp.localCfg.timeExport+_totalNum*ToolsApp.localCfg.timeUp+(_totalWebpNum-_dealWebpNum)*ToolsApp.localCfg.timeWebp);
+				}else{
+					txtUpLeftTime.text = ""+getTimeStr(_totalNum*ToolsApp.localCfg.timeZip+(_totalNum-_deleteNum)*ToolsApp.localCfg.timeExport+_totalNum*ToolsApp.localCfg.timeUp);
+				}
 			}else{
-				txtUpLeftTime.text = ""+getTimeStr(_totalNum*ToolsApp.localCfg.time50Zip+(_totalNum-_deleteNum)*ToolsApp.localCfg.time50Export+_totalNum*ToolsApp.localCfg.time50Up);
+				if(_curProject && _curProject.encryptMap == ProjectConfig.ENCRYPT_WEBP)
+				{
+					txtUpLeftTime.text = ""+getTimeStr(_totalNum*ToolsApp.localCfg.time50Zip+(_totalNum-_deleteNum)*ToolsApp.localCfg.time50Export+_totalNum*ToolsApp.localCfg.time50Up+(_totalWebpNum-_dealWebpNum)*ToolsApp.localCfg.time50Webp);
+				}else{
+					txtUpLeftTime.text = ""+getTimeStr(_totalNum*ToolsApp.localCfg.time50Zip+(_totalNum-_deleteNum)*ToolsApp.localCfg.time50Export+_totalNum*ToolsApp.localCfg.time50Up);	
+				}
+				
+				txtSvnInfo.text = "svn日志数:"+svnlog.length+"文件:"+_totalNum+" size:"+getFileSize(_totalSize);
 			}
 //			Log.log("当前导出"+_deleteNum+"/"+_totalNum);
 		}
+		
+		
+		private function getFileSize(size:Number):String
+		{
+			if(size<1024)
+				return size+"B";
+			else if(size<1024*1024)
+				return (size/1024).toFixed(2)+"KB";
+			else
+				return (size/1024/1024).toFixed(2)+"M";
+		}
+		
 		
 		/**
 		 *获取剩余时间 
@@ -685,4 +929,12 @@ package com.cyj.app.view
 		}
 		
 	}
+}
+
+
+class TimeInfo
+{
+	public var day:String;
+	public var time:String;
+	public var id:Number=0;
 }

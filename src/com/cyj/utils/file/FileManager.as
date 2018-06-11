@@ -57,6 +57,16 @@ package com.cyj.utils.file
 			return allFiles;
 		}
 		
+		public function openDir(path:String):void
+		{
+			try{
+				var file:File = new File(path);
+				file.openWithDefaultApplication();
+			}catch(e:*){
+				trace("打开目录"+path+"错误");
+				
+			}
+		}
 		
 		public function saveByteFile(path:String, byte:ByteArray, isCheckExit:Boolean=false):Boolean
 		{

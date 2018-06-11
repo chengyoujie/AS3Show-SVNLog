@@ -8,8 +8,6 @@ package com.cyj.app.data
 		public var title:String;
 		public var appName:String;
 		public var version:String;
-		public var mapkey:String;
-		public var mapextion:String;
 		
 		public var ftphost:String
 		public var ftpname:String;
@@ -59,6 +57,17 @@ package com.cyj.app.data
 		}
 
 		
+		private var _webppath:String;
+		public function set webppath(value:String):void
+		{
+			_webppath = value;
+			_webppath = _webppath.replace(/\$apppath/gi, File.applicationDirectory.nativePath);
+			_webppath = _webppath.replace(/\//gi,"\\");
+		}
+		public function get webppath():String
+		{
+			return _webppath;
+		}
 		
 		
 		private var _rarpath:String;

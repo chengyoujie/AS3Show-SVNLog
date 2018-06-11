@@ -25,5 +25,41 @@ res资源打包工具
 		1.增加从50上读取文件，保存到本地，顺便res.dat中hash值也和之前版本的一致。
 			另外 速度比之前直接从svn中导出快了 如1万个文件，从svn中导出大概148min， 从50上大概20min
 	2017-12-04
-		增加日志文件res_XXX_XXX.txt文件
+		增加日志文件res_XXX_XXX.txt文件\
+	2018-01-10
+		1.增加日期输入框中对含有版本号信息的数字过滤赋值.
+		2.增加打开51目录的快捷按钮
+		3.优化显示加上当前导出文件的大小
+		4.修复应用框小的bug
 		
+==list.config
+<config>
+	<project 
+		name="皇城站"
+		id="hcz"
+		svnroot="https://svn/svn/{$id}/"
+		svncmd="log https://svn/svn/{$id}/trunk/res/ -r {==starttime==}:{==endtime==} -v  "
+		svnoutingoredic="/trunk/res/"
+		updir="\\192.168.2.51\packages\{$id}_version\online\res"
+		resdicpath="\\192.168.2.50\{$id}\zhcn\config\nightly\res.dat"
+		res50path="\\192.168.2.50\{$id}\res"
+		encryptMap="1"
+		mapkey="3tion"
+		mapextion="mpq"
+		weburl="http://192.168.2.50:9090/cq_build/dobuild.do"
+	/>
+	<project 
+		name="H5-观海策"
+		id="h5_ghc"
+		svnroot="https://svn/svn/{$id}/"
+		svncmd="log https://svn/svn/{$id}/trunk/res/cn/ -r {==starttime==}:{==endtime==} -v  "
+		svnoutingoredic="/trunk/res/cn/"
+		updir="\\192.168.2.51\packages\{$id}_version\online\res"
+		resdicpath="\\192.168.2.50\ftp\tool\remotdata\tempdata\h5res\res.dat"
+		res50path="\\192.168.2.50\{$id}\res\cn"
+		encryptMap="2"
+		mapkey=""
+		mapextion=""
+		weburl="http://192.168.2.50:60200/build/index.html"
+	/>
+</config>

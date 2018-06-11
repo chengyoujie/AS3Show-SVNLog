@@ -14,7 +14,7 @@ package com.cyj.app.view.ui.mapreversal {
 			  <Label text="提交者：" x="7" y="30" color="0x99ff00" width="65" height="18" align="center"/>
 			  <Label text="chengyoujie" x="75" y="30" color="0xffff00" width="137" height="18" align="left" var="txtAuth"/>
 			  <Label text="提交内容：" x="7" y="55" color="0x99ff00" width="65" height="18" align="center"/>
-			  <Label text="chengyoujie" x="11" y="79" color="0xffff00" width="231" height="251" align="left" var="txtContent"/>
+			  <Label text="chengyoujie" x="11" y="79" color="0xffffcc" width="231" height="251" align="left" var="txtContent" isHtml="true"/>
 			</View>;
 		public function SvnTipUI(){}
 		override protected function createChildren():void {

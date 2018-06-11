@@ -72,7 +72,7 @@ package
 			content = "";
 			for(i=0; i<this.logs.length; i++)
 			{
-				content += this.logs[i].str()+"\n";
+				content += this.logs[i].colorstr()+"\n";
 			}
 		}
 		

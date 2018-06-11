@@ -122,15 +122,15 @@ package com.cyj.utils.load
 			{
 				if(_currentResInfo.url == _lastUrl)
 				{
-					if(getTimer() - _lastTime > 60000)//超过一分钟则提示加载超时  
-					{
-						trace("资源"+_currentResInfo.url + "加载超时");
-						_currentResInfo.execError("加载超时");
-						_loadedRes[_currentResInfo.url] = ERROR_LOAD;
-						deleteRes(_currentResInfo.url);
-						_isRuning = false;//跳过此条加载下一个
-						loadNext();
-					}
+//					if(getTimer() - _lastTime > 60000)//超过一分钟则提示加载超时  
+//					{
+//						trace("资源"+_currentResInfo.url + "加载超时");
+//						_currentResInfo.execError("加载超时");
+//						_loadedRes[_currentResInfo.url] = ERROR_LOAD;
+//						deleteRes(_currentResInfo.url);
+//						_isRuning = false;//跳过此条加载下一个
+//						loadNext();
+//					}
 				}
 				return;
 			}

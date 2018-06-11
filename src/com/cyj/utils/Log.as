@@ -37,10 +37,10 @@ package com.cyj.utils
 		
 		private static var _refushEvent:Event = new Event(Event.RENDER);
 		private static var _delayMarkTimeId:int = 0;
-		public static function log(value:String):void
+		public static function log(value:String, isShowInView:Boolean=true):void
 		{
 			trace("Log::"+value);
-			if(_logTxt)
+			if(_logTxt && isShowInView)
 			{
 				_logTxt.text = value+"";
 				_logTxt.dispatchEvent(_refushEvent);

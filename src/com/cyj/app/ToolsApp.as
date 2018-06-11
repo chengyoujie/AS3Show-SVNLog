@@ -46,8 +46,7 @@ package com.cyj.app
 		public static var localCfg:LocalConfig = new LocalConfig();
 		
 		public static var VERSION:String = "1.0.1";
-		
-//		public static var ftp:SimpleFTP;		
+
 		public function ToolsApp()
 		{
 		}
@@ -76,13 +75,6 @@ package com.cyj.app
 			VERSION = config.version;
 			loader.loadSingleRes(config.projectpath, ResLoader.TXT, handleProjectConfigLoaded, null, handleLoadError);
 			App.stage.nativeWindow.title = config.title+"@"+VERSION;
-			
-//			Log.init(App.stage, 9, 360, 586, 65);
-			//
-//			new ReadMapCfg();
-//			ftp = new SimpleFTP(config.ftphost, config.ftpname, config.ftppass);
-//			ftp.
-//			SimpleFTP.getFile(config.ftphost, config.ftpname, config.ftppass, "/data/", handleGetFtpList);
 		}
 		
 		private static function handleProjectConfigLoaded(res:ResData):void
@@ -92,7 +84,9 @@ package com.cyj.app
 			var plist:XMLList = pros.project;
 			for(var i:int=0; i<plist.length(); i++)
 			{
-				projects.push(XML2Obj.readXml(plist[i]));
+				var p:ProjectConfig = XML2Obj.readXml(plist[i]) as ProjectConfig;
+				p.initVar();
+				projects.push(p);
 			}
 			loader.loadSingleRes("res/local.xml", ResLoader.TXT, handleLocalConfigLoaded, null, handleLoadError);
 			
@@ -193,7 +187,8 @@ package com.cyj.app
 		{
 			if(oper)
 			{
-				CMDManager.runStringCmd(oper);;
+				CMDManager.runStringCmd(oper);
+//				Log.log(oper);
 			}
 			if(endTag)
 				CMDManager.runStringCmd("|TAG|"+endTag+"|TAG|");
@@ -212,7 +207,7 @@ package com.cyj.app
 			_catchCmd += cmd;
 			cmd = cmd.replace(/--username .*? --password .*?\s+/gi, "--username ****** --password ****** ");
 			trace(cmd);
-			Log.log(cmd);
+			Log.log(cmd, false);
 			
 			var reg2:RegExp = /Export complete/gi;
 			var arr2:Array = reg2.exec(cmd);
@@ -221,6 +216,16 @@ package com.cyj.app
 				cmd = cmd.substr(reg2.lastIndex);
 				view.expleteComplete();
 				arr2 = reg2.exec(cmd);
+			}
+			
+			
+			var reg3:RegExp = /Saving file (.*?\.webp)/gi;
+			var arr3:Array = reg3.exec(cmd);
+			while(arr3)
+			{
+				cmd = cmd.substr(reg3.lastIndex);
+				view.expleteOneWebP(arr3[1]);
+				arr3 = reg3.exec(cmd);
 			}
 			
 			
