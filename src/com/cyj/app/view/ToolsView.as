@@ -754,7 +754,16 @@ package com.cyj.app.view
 						_curProjectResDic[path] = MD5.hash(Math.random()*1000+"cyj").substr(0, 8);
 						ToolsApp.svnOper("export  -r "+version+" \""+_curProject.svnroot+logitem.file+"\" \""+ cmdFilePath(file.nativePath)+"\" --force", "ITEM");//需要加上“ 如果文件中含有空格会导致输出错误
 					}else{
-						ToolsApp.loader.loadSingleRes(convertFilePath(_curProject.res50path)+"/"+res50path, ResLoader.BYT, handleSaveToFile, null, hanldeSaveError, {"path":path});
+						var f:File = new File(convertFilePath(_curProject.res50path)+"/"+res50path);
+						var url:String;
+						if(f.isDirectory)
+						{
+							Log.log("   file is direction don't need load "+f.nativePath);
+						}else{
+							url = convertFilePath(_curProject.res50path)+"/"+res50path;
+						}
+						if(url)
+							ToolsApp.loader.loadSingleRes(url, ResLoader.BYT, handleSaveToFile, null, hanldeSaveError, {"path":path});
 					}
 //				}
 			}
@@ -788,7 +797,7 @@ package com.cyj.app.view
 						path = "m2/"+MD5.hash(path.replace("m2/", "")+_curProject.mapkey).substr(0, 10)+"."+_curProject.mapextion;
 					}
 				}else if(_curProject.encryptMap == ProjectConfig.ENCRYPT_WEBP){//H5的打包方式
-					path = path.replace(/m\//gi, "m2/");
+					path = path.replace(/^m\//gi, "m2/");
 					var reg:RegExp = /[\/\\](\d*)\.jpg/gi;
 					var arr:Array = reg.exec(path);
 					if(arr && arr.length>1)
@@ -814,7 +823,11 @@ package com.cyj.app.view
 				_curProjectResDic[path] = md5Stream.complete(byte).substr(0, 8);
 			}
 			_totalSize += byte.length;
-			ToolsApp.file.saveByteFile(ToolsApp.config.svnoutpath+"/"+path, byte);
+			try{
+				ToolsApp.file.saveByteFile(ToolsApp.config.svnoutpath+"/"+path, byte);
+			}catch(e:*){
+				Log.error("保存资源错误："+path);
+			}
 			expleteComplete();
 			Log.log("保存资源:"+path+" key:"+(_curProjectResDic==null?"NULL":_curProjectResDic[path])+"  "+_deleteNum+"/"+_totalNum);
 			checkComplete();
@@ -823,7 +836,7 @@ package com.cyj.app.view
 		private function hanldeSaveError(res:ResData, msg:String):void
 		{
 			Log.error("资源保存失败："+res.param.path+"  Error:"+msg);
-			errorMsg += "资源保存失败："+res.param.path+"  Error:"+msg+"\n";
+			errorMsg += "资源保存失败："+res.param.path+"  Error:"+msg+"\r\n";
 			expleteComplete();
 			checkComplete();
 		}

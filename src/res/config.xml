@@ -2,7 +2,7 @@
 title="增量更新工具@cyj"
 appName="增量更新工具"
 
-version="1.0.6"
+version="1.0.7"
 
 ftphost="192.168.2.55"
 ftpname="dev"
